@@ -13,7 +13,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
-logging.basicConfig(filename="main.log", level=logging.DEBUG, filemode="w", format="%(asctime)s %(levelname)s %(message)s")
+logging.basicConfig(filename="webhook.log", level=logging.DEBUG, filemode="w", format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("main")
 
 app = Flask(__name__)
@@ -46,7 +46,7 @@ def index():
                                      "Команды:\n"
                                      "<i>/list</i> - показать все записанные др\n"
                                      "<i>/add</i> - добавить др участника. Несколько участников пишутся через запятую"
-                                         "Например, /add @mikhail_utkins 19.10.1990, @ivan_pupkins 22.11.1999\n")
+                                         "Например, /add @mikhail_utkins 19.10, @ivan_pupkins 22.11\n")
                     return Response(status=200)
 
                 # User asks list of members
@@ -56,23 +56,23 @@ def index():
                     return Response(status=200)
 
                 # User wants to add members to the list
-                # This regExp checks this format "/add @mikhail_utkins 19.10.1990, @ivan_pupkins 22.11.1999"
-                case r'(?i)^/add\s(@\S+\s[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9][0-9]((,(\s)*)|$))+':
+                # This regExp checks this format "/add @mikhail_utkins 19.10, @ivan_pupkins 22.11"
+                case r'(?i)^/add\s(@\S+\s[0-9][0-9].[0-9][0-9]((,(\s)*)|$))+':
                     memberDict = dict()
                     memberDict['members'] = list()
                     # If there are many members in a string, put it into the dict and analyse each
                     membersString = str.split(income_message, ',')
                     for el in membersString:
-                        # just in case check a string for this format: "@ivan_pupkins 22.11.1999"
-                        result = re.search(r'(?i)@\S+\s[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9][0-9]', el)
+                        # just in case check a string for this format: "@ivan_pupkins 22.11"
+                        result = re.search(r'(?i)@\S+\s[0-9][0-9].[0-9][0-9]', el)
                         if result:
                             # If everything is ok, separate nickname and birthday
                             nickname = re.search(r'(?i)@\S+', result.group(0))
-                            birthday = re.search(r'[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9][0-9]', result.group(0))
+                            birthday = re.search(r'[0-9][0-9].[0-9][0-9]', result.group(0))
                             try:
                                 nickname = nickname.group(0)
                                 # Try to convert birthday string to python date type
-                                birthday = datetime.strptime(birthday.group(0), "%d.%m.%Y")
+                                birthday = birthday.group(0)
                             except ValueError as e:
                                 # If there are any errors with converting, say it to user and finish function
                                 log.debug(f"ERROR with decode date format {e}")

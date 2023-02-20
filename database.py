@@ -13,7 +13,7 @@ class Members(Base):
     __tablename__ = 'Members'
     id = Column(Integer, primary_key=True)
     nickname = Column(String(250), nullable=False)
-    birthday = Column(DateTime, nullable=False)
+    birthday = Column(String(250), nullable=False)
     chat_id = Column(String(250), nullable=False)
     __table_args__ = (UniqueConstraint('nickname', 'chat_id', name='unique_name_chat_id'),)
 
@@ -61,5 +61,13 @@ def get_members_of_chat(chat_id=None):
     except exc.OperationalError as e:
         # If we get  error - send raw exception
         return e.args
+
+
+def get_birthday_boys():
+    current_dateTime = datetime.now().strftime('%d.%m')
+    DBSession = sessionmaker(bind=engine)
+    session = DBSession()
+    res = session.query(Members).filter_by(birthday=current_dateTime)
+    return res
 
 
