@@ -6,9 +6,9 @@ from flask import request, Response
 from flask import jsonify
 import json
 import logging
-import regex_spm
 import re
 import database
+import regex_spm
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -114,7 +114,10 @@ def sendMessage(chat_id, text="OK"):
               'parse_mode': 'HTML',
               'text': text}
     log.debug(f"MESSAGE TO SEND {url}, {answer}")
-    requests.post(url, json=answer)
+    try:
+        requests.post(url, json=answer)
+    except Exception as e:
+        log.error(e)
 
 
 def setWebhook():

@@ -46,13 +46,18 @@ def sendMessage(chat_id, text="OK", image_url=""):
     requests.post(url, json=answer)
 
 
-for member in database.get_birthday_boys():
+# Getting the members list who was born today
+membersList = database.get_birthday_boys()
+for member in membersList:
+    try:
+        # for each member generate wish text and image and send it to chat
+        wishText = member.nickname + get_wish()
+        wishImage = get_image(wish_text=wishText)
+        sendMessage(chat_id=member.chat_id, text=wishText, image_url=wishImage)
+    except Exception as e:
+        log.error(e)
+        raise Exception
 
-    wishText = member.nickname + get_wish()
-    wishImage = get_image(wish_text=wishText)
-    sendMessage(chat_id=member.chat_id, text=wishText, image_url=wishImage)
-
-print('')
 
 
 

@@ -56,7 +56,7 @@ def get_members_of_chat(chat_id=None):
         for member in session.query(Members).filter_by(chat_id=chat_id):
 
             # And making beauty-formatted string for user
-            stringToReturn = stringToReturn + f"{member.nickname} {member.birthday.strftime('%d.%m.%Y')}" + "\n"
+            stringToReturn = stringToReturn + f"{member.nickname} {member.birthday}" + "\n"
         return stringToReturn if stringToReturn else "Список пуст"
     except exc.OperationalError as e:
         # If we get  error - send raw exception
@@ -69,5 +69,7 @@ def get_birthday_boys():
     session = DBSession()
     res = session.query(Members).filter_by(birthday=current_dateTime)
     return res
+
+
 
 
