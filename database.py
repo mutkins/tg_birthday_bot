@@ -51,13 +51,13 @@ def get_members_of_chat(chat_id=None):
         DBSession = sessionmaker(bind=engine)
         session = DBSession()
 
-        stringToReturn = ""
+        string_to_return = ""
         # Searching members
         for member in session.query(Members).filter_by(chat_id=chat_id):
 
             # And making beauty-formatted string for user
-            stringToReturn = stringToReturn + f"{member.nickname} {member.birthday}" + "\n"
-        return stringToReturn if stringToReturn else "Список пуст"
+            string_to_return = string_to_return + f"{member.nickname} {member.birthday}" + "\n"
+        return string_to_return if string_to_return else "Список пуст"
     except exc.OperationalError as e:
         # If we get  error - send raw exception
         return e.args

@@ -15,7 +15,7 @@ bot_URL = os.environ.get('bot_URL')
 
 
 # Making a birthday wish
-def get_wish():
+def get_wish_from_openai():
     response = openai.Completion.create(
         model="text-davinci-003",
         prompt=f"Напиши короткое забавное поздравление с днем рождения",
@@ -29,7 +29,7 @@ def get_wish():
 
 
 # making image for the wish
-def get_image(wish_text):
+def get_image_from_openai(wish_text):
     response = openai.Image.create(
         prompt=f"Забавная открытка {wish_text}",
         n=1,
@@ -39,11 +39,19 @@ def get_image(wish_text):
 
 
 # sending wish-message
-def sendMessage(chat_id, text="OK", image_url=""):
+def send_message(chat_id, text="OK", image_url=""):
     url = bot_URL + "sendPhoto"
-    answer = {'chat_id': chat_id, 'photo': image_url, 'parse_mode': 'HTML', 'caption': f"<b>{text}</b>"}
+    # answer = {'chat_id': chat_id, 'photo': image_url, 'parse_mode': 'HTML', 'caption': f"<b>{text}</b>"}
+    answer = {'chat_id': chat_id, 'parse_mode': 'HTML', 'caption': f"<b>{text}</b>"}
+
+    multipart_form_data = {
+    'upload': ('custom_file_name.zip', image_url),
+    'action': (None, 'store'),
+    'path': (None, '/path1')
+    }
+    files1 = [('files', open('00000-30_k_euler_292211283_funny-image-happy-birthday-cute-a.png', 'rb'))]
     log.debug(f"MESSAGE TO SEND {url}, {answer}")
-    requests.post(url, json=answer)
+    requests.post(url, json=answer, files=files1)
 
 
 # Getting the members list who was born today
@@ -51,9 +59,11 @@ membersList = database.get_birthday_boys()
 for member in membersList:
     try:
         # for each member generate wish text and image and send it to chat
-        wishText = member.nickname + get_wish()
-        wishImage = get_image(wish_text=wishText)
-        sendMessage(chat_id=member.chat_id, text=wishText, image_url=wishImage)
+        # wishText = member.nickname + get_wish_from_openai()
+        # wishImage = get_image_from_openai(wish_text=wishText)
+        wishText = member.nickname + "Happy birthday!"
+        wishImage = open('00000-30_k_euler_292211283_funny-image-happy-birthday-cute-a.png', 'rb')
+        send_message(chat_id=member.chat_id, text=wishText, image_url=wishImage)
     except Exception as e:
         log.error(e)
         raise Exception
