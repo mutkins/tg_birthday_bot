@@ -5,11 +5,15 @@ from dotenv import load_dotenv
 import requests
 import database
 from aiogram import Bot, Dispatcher, executor, types
+from aiogram.types import InputFile
 import aioschedule
 import asyncio
 import time
 import database
 import re
+import random
+import tools
+
 
 load_dotenv()
 openai.api_key = os.environ.get('openai.api_key')
@@ -83,23 +87,22 @@ async def send_welcome(message: types.Message):
 
 
 async def send_wishes():
-    print("SEND")
-    url = bot_URL + "sendPhoto"
-    # answer = {'chat_id': chat_id, 'photo': image_url, 'parse_mode': 'HTML', 'caption': f"<b>{text}</b>"}
-    # answer = {'chat_id': chat_id, 'parse_mode': 'HTML', 'caption': f"<b>{text}</b>"}
-
-    # multipart_form_data = {
-    #     'upload': ('custom_file_name.zip', image_url),
-    #     'action': (None, 'store'),
-    #     'path': (None, '/path1')
-    # }
-    files1 = [('files', open('00000-30_k_euler_292211283_funny-image-happy-birthday-cute-a.png', 'rb'))]
-    # log.debug(f"MESSAGE TO SEND {url}, {answer}")
-    await bot.send_photo(chat_id='-879913730', photo='https://wp-s.ru/wallpapers/9/18/438540442363429/izgib-reki-na-fone-zakata.jpg')
+    membersList = database.get_birthday_boys()
+    for member in membersList:
+        try:
+            # for each member generate wish text and image and send it to chat
+            # wishText = member.nickname + get_wish_from_openai()
+            # wishImage = get_image_from_openai(wish_text=wishText)
+            wish_text = member.nickname + "Happy birthday!"
+            photo = InputFile(tools.get_random_image_from_folder())
+            await bot.send_photo(chat_id=member.chat_id, photo=photo, caption=wish_text)
+        except Exception as e:
+            log.error(e)
+            raise Exception
 
 
 async def scheduler():
-    aioschedule.every(5).seconds.do(send_wishes)
+    aioschedule.every(20).seconds.do(send_wishes)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
