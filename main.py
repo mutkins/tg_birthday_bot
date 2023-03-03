@@ -87,15 +87,24 @@ async def send_welcome(message: types.Message):
 
 
 async def send_wishes():
-    membersList = database.get_birthday_boys()
-    for member in membersList:
+    members_list = database.get_birthday_boys()
+    for member in members_list:
         try:
-            # for each member generate wish text and image and send it to chat
-            # wishText = member.nickname + get_wish_from_openai()
-            # wishImage = get_image_from_openai(wish_text=wishText)
-            wish_text = member.nickname + "Happy birthday!"
-            photo = InputFile(tools.get_random_image_from_folder())
-            await bot.send_photo(chat_id=member.chat_id, photo=photo, caption=wish_text)
+            # Get wish path and photo path. It needs to delete wish and photo later
+            wish_text_path = tools.get_random_wishpath_from_folder()
+            photo_path = tools.get_random_imgpath_from_folder()
+
+            # Get wish and photo from files
+            with open(wish_text_path, 'r') as f:
+                wish_text = f.read()
+            photo = InputFile(photo_path)
+
+            # Send message to chat in async format
+            await bot.send_photo(chat_id=member.chat_id, photo=photo, caption=member.nickname+" "+wish_text)
+
+            # Delete used photo and wish from folder (because we don't want to send the same next time)
+            os.remove(photo_path)
+            os.remove(wish_text_path)
         except Exception as e:
             log.error(e)
             raise Exception

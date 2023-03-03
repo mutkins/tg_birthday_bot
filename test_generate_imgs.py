@@ -9,7 +9,7 @@ def write_image(data):
         file.write(data)
 
 
-async def fetch_content(url,session):
+async def fetch_content(url, session):
     async with session.get(url, allow_redirects=True) as response:
         data = await response.read()
         write_image(data)
