@@ -1,4 +1,3 @@
-import openai
 import os
 import logging
 from dotenv import load_dotenv
@@ -12,9 +11,7 @@ import tools
 
 
 load_dotenv()
-openai.api_key = os.environ.get('openai.api_key')
-bot_URL = os.environ.get('bot_URL')
-API_TOKEN = os.environ.get('bot_token')
+API_TOKEN = os.environ.get('tgBot_id')
 
 # Configure logging
 logging.basicConfig(filename="main.log", level=logging.DEBUG, filemode="w",
