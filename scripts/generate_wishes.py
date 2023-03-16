@@ -33,5 +33,6 @@ if __name__ == '__main__':
         wish = get_wish_from_openai()
         # write wish to file in folder
         write_wish(wish)
+        time.sleep(5)
 
 

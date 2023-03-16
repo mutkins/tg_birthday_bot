@@ -2,6 +2,11 @@ from sqlalchemy import create_engine, select, Table, Column, Integer, String, Me
 from sqlalchemy.orm import mapper, relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, date, time
+import logging
+
+logging.basicConfig(filename="main.log", level=logging.DEBUG, filemode="w",
+                    format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger("main")
 
 # Declarative method
 engine = create_engine("sqlite:///bithdb.db", echo=True)

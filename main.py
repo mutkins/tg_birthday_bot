@@ -2,16 +2,12 @@ import openai
 import os
 import logging
 from dotenv import load_dotenv
-import requests
-import database
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InputFile
 import aioschedule
 import asyncio
-import time
 import database
 import re
-import random
 import tools
 
 
@@ -78,7 +74,7 @@ async def add_members(message: types.Message):
 
 
 @dp.message_handler(commands=['list'])
-async def send_welcome(message: types.Message):
+async def send_list(message: types.Message):
     """
     This handler will be called when user sends `/start` or `/help` command
     """
@@ -111,7 +107,7 @@ async def send_wishes():
 
 
 async def scheduler():
-    aioschedule.every(20).seconds.do(send_wishes)
+    aioschedule.every().day.at("10:00").do(send_wishes)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
