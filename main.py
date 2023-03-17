@@ -88,7 +88,7 @@ async def send_wishes():
             photo_path = tools.get_random_imgpath_from_folder()
 
             # Get wish and photo from files
-            with open(wish_text_path, 'r') as f:
+            with open(wish_text_path, 'r', encoding='cp1251') as f:
                 wish_text = f.read()
             photo = InputFile(photo_path)
 
@@ -104,7 +104,7 @@ async def send_wishes():
 
 
 async def scheduler():
-    aioschedule.every().day.at("08:00").do(send_wishes)
+    aioschedule.every().day.at("09:00").do(send_wishes)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
