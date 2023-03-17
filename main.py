@@ -104,7 +104,7 @@ async def send_wishes():
 
 
 async def scheduler():
-    aioschedule.every().day.at("10:00").do(send_wishes)
+    aioschedule.every().day.at("08:00").do(send_wishes)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
