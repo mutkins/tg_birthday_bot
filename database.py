@@ -20,7 +20,7 @@ class Members(Base):
     nickname = Column(String(250), nullable=False)
     birthday = Column(String(250), nullable=False)
     chat_id = Column(String(250), nullable=False)
-    wised_mark_year = Column(String(250))
+    wished_mark_year = Column(String(250))
     __table_args__ = (UniqueConstraint('nickname', 'chat_id', name='unique_name_chat_id'),)
 
 
@@ -87,7 +87,7 @@ def mark_wished_member(chat_id, nickname):
         session = DBSession()
         q = session.query(Members).filter_by(chat_id=chat_id, nickname=nickname)
         if q:
-            q.wised_mark_year = datetime.now().strftime('%Y')
+            q.wished_mark_year = datetime.now().strftime('%Y')
     except exc.OperationalError as e:
         log.error(e)
 
@@ -96,7 +96,7 @@ def is_member_wished(chat_id, nickname):
     try:
         session = DBSession()
         q = session.query(Members).filter_by(chat_id=chat_id, nickname=nickname)
-        if q.wised_mark_year == datetime.now().strftime('%Y'):
+        if q.wished_mark_year == datetime.now().strftime('%Y'):
             return True
         else:
             return False
