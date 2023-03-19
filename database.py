@@ -23,34 +23,43 @@ class Members(Base):
     wished_mark_year = Column(String(250))
     __table_args__ = (UniqueConstraint('nickname', 'chat_id', name='unique_name_chat_id'),)
 
+    def __init__(self, nickname, birthday, chat_id):
+        self.nickname = nickname
+        self.chat_id = chat_id
+        self.birthday = birthday
 
-def add_members(members_dict):
-    # Create a table. If the table exists - the class is connected to it
-    Base.metadata.create_all(engine)
-    stringToReturn = ""
-    #  Add new member to the table
-    for items in members_dict.get('members'):
+    def get_nickname(self):
+        return self.nickname
+
+    def get_chat_id(self):
+        return self.chat_id
+
+    def get_birthday(self):
+        return self.birthday
+
+    def add_member(self):
+        # Create a table. If the table exists - the class is connected to it
+        Base.metadata.create_all(engine)
+        string_to_return = ""
+        #  Add new member to the table
         try:
             DBSession = sessionmaker(bind=engine)
             session = DBSession()
 
             # If member with these nickname and chat_id exists - update his birthday
-            q = session.query(Members).filter_by(nickname=items.get('nickname'), chat_id=items.get('chat_id')).first()
+            q = session.query(Members).filter_by(nickname=self.get_nickname(), chat_id=self.get_chat_id()).first()
             if q:
-                q.birthday = items.get('birthday')
+                q.birthday = self.get_birthday()
             else:
                 # Else - just add a new member
-                new_member = Members(nickname=items.get('nickname'),
-                                     birthday=items.get('birthday'), chat_id=items.get('chat_id'))
-                session.add(new_member)
+                session.add(self)
             session.commit()
-            stringToReturn = stringToReturn + f"{items.get('nickname')}" + "\n"
+            return None
         except exc.IntegrityError as e:
             # return error if something goes wrong
             session.rollback()
             log.error(e)
             return e.args
-    return stringToReturn + "будут поздравлены!"
 
 
 def get_members_of_chat(chat_id=None):

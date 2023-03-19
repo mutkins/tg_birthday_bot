@@ -44,35 +44,34 @@ async def add_members(message: types.Message):
     """
     This handler will be called when user sends `/add`
     """
-    # REFACTOR IT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     member_dict = dict()
     member_dict['members'] = list()
     # If there are many members in a string, put it into the dict and analyse each one
     members_string = str.split(message.get_args(), ',')
-    for el in members_string:
-        # just in case check a string for this format: "@ivan_pupkins 22.11"
-        result = re.search(r'(?i)@\S+\s[0-9][0-9].[0-9][0-9]', el)
-        if result:
-            # If everything is ok, separate nickname and birthday
-            nickname = re.search(r'(?i)@\S+', result.group(0))
-            birthday = re.search(r'[0-9][0-9].[0-9][0-9]', result.group(0))
-            try:
-                nickname = nickname.group(0)
-                birthday = birthday.group(0)
-            except ValueError as e:
-                # If there are any errors with converting, say it to user and finish function
-                log.debug(f"ERROR with decode date format {e}")
-                await message.reply(str(e.args) + "\n Используй /help")
-
-            # put nickname and his birthday to a dict
-            member_dict['members'].append({'nickname': nickname, 'birthday': birthday,
-                                           'chat_id': message.chat.id})
+    report_string = ""
+    is_success = True
+    for item in members_string:
+        # try to parse user's string
+        nick_and_bday = tools.get_nickname_and_birthday_by_regex(item)
+        # if we can parse user's string, create object for new member
+        if nick_and_bday:
+            new_member = database.Members(*nick_and_bday, message.chat.id)
             # send the dict to a database and get response
-            res = database.add_members(member_dict)
-            # send response to user
-            await message.reply(res)
+            res = new_member.add_member()
+            # If method returns something - something went wrong
+            if res:
+                await message.reply("Внутренняя ошибка, попробуйте позже")
+                raise Exception
+            # Else - send response to user
+            report_string += f"{new_member.get_nickname()}\n"
+
         else:
             await message.reply("Используй /help")
+            log.info(f"User sent {message.get_args()}, it was not be able to parse it")
+            is_success = False
+
+    if is_success:
+        await message.reply(report_string + "Будут поздравлены")
 
 
 @dp.message_handler(commands=['list'])
@@ -99,7 +98,7 @@ async def send_wishes():
 
             # Send message to chat in async format
             if not database.is_member_wished(chat_id=member.chat_id, nickname=member.nickname):
-                await bot.send_photo(chat_id=member.chat_id, photo=photo, caption=member.nickname+" "+wish_text)
+                await bot.send_photo(chat_id=member.chat_id, photo=photo, caption=member.nickname + " " + wish_text)
                 database.mark_wished_member(chat_id=member.chat_id, nickname=member.nickname)
             else:
                 log.error(f"The member with nickname = {member.nickname} and chat_id = {member.chat_id} "
