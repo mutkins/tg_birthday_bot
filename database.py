@@ -20,6 +20,7 @@ class Members(Base):
     nickname = Column(String(250), nullable=False)
     birthday = Column(String(250), nullable=False)
     chat_id = Column(String(250), nullable=False)
+    wised_mark_year = Column(String(250))
     __table_args__ = (UniqueConstraint('nickname', 'chat_id', name='unique_name_chat_id'),)
 
 
@@ -47,6 +48,7 @@ def add_members(members_dict):
         except exc.IntegrityError as e:
             # return error if something goes wrong
             session.rollback()
+            log.error(e)
             return e.args
     return stringToReturn + "будут поздравлены!"
 
@@ -65,15 +67,41 @@ def get_members_of_chat(chat_id=None):
         return string_to_return if string_to_return else "Список пуст"
     except exc.OperationalError as e:
         # If we get  error - send raw exception
+        log.error(e)
         return e.args
 
 
 def get_birthday_boys():
     current_dateTime = datetime.now().strftime('%d.%m')
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
-    res = session.query(Members).filter_by(birthday=current_dateTime)
-    return res
+    try:
+        DBSession = sessionmaker(bind=engine)
+        session = DBSession()
+        res = session.query(Members).filter_by(birthday=current_dateTime)
+        return res
+    except exc.OperationalError as e:
+        log.error(e)
+
+
+def mark_wished_member(chat_id, nickname):
+    try:
+        session = DBSession()
+        q = session.query(Members).filter_by(chat_id=chat_id, nickname=nickname)
+        if q:
+            q.wised_mark_year = datetime.now().strftime('%Y')
+    except exc.OperationalError as e:
+        log.error(e)
+
+
+def is_member_wished(chat_id, nickname):
+    try:
+        session = DBSession()
+        q = session.query(Members).filter_by(chat_id=chat_id, nickname=nickname)
+        if q.wised_mark_year == datetime.now().strftime('%Y'):
+            return True
+        else:
+            return False
+    except exc.OperationalError as e:
+        log.error(e)
 
 
 

@@ -93,9 +93,12 @@ async def send_wishes():
             photo = InputFile(photo_path)
 
             # Send message to chat in async format
-            await bot.send_photo(chat_id=member.chat_id, photo=photo, caption=member.nickname+" "+wish_text)
-
-            # Delete used photo and wish from folder (because we don't want to send the same next time)
+            if not database.is_member_wished(chat_id=member.chat_id, nickname=member.nickname):
+                await bot.send_photo(chat_id=member.chat_id, photo=photo, caption=member.nickname+" "+wish_text)
+                database.mark_wished_member(chat_id=member.chat_id, nickname=member.nickname)
+            else:
+                log.error(f"The member with nickname = {member.nickname} and chat_id = {member.chat_id} "
+                          f"is already wished in this year. May be something went wrong")
             os.remove(photo_path)
             os.remove(wish_text_path)
         except Exception as e:
@@ -104,7 +107,7 @@ async def send_wishes():
 
 
 async def scheduler():
-    aioschedule.every().day.at("09:45").do(send_wishes)
+    aioschedule.every().day.at("08:00").do(send_wishes)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
