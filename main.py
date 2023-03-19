@@ -8,7 +8,11 @@ import asyncio
 import database
 import re
 import tools
+import configparser
 
+# Read config file
+config = configparser.ConfigParser()
+config.read("settings.ini")
 
 load_dotenv()
 API_TOKEN = os.environ.get('tgBot_id')
@@ -107,7 +111,7 @@ async def send_wishes():
 
 
 async def scheduler():
-    aioschedule.every().day.at("13:45").do(send_wishes)
+    aioschedule.every().day.at(config["time_to_send_wish"]).do(send_wishes)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
