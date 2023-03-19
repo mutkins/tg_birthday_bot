@@ -1,6 +1,6 @@
 import os
 import random
-
+import re
 
 def get_random_imgpath_from_folder():
     images_list = os.listdir("img")

@@ -58,7 +58,6 @@ async def add_members(message: types.Message):
             birthday = re.search(r'[0-9][0-9].[0-9][0-9]', result.group(0))
             try:
                 nickname = nickname.group(0)
-                # Try to convert birthday string to python date type
                 birthday = birthday.group(0)
             except ValueError as e:
                 # If there are any errors with converting, say it to user and finish function
@@ -68,10 +67,12 @@ async def add_members(message: types.Message):
             # put nickname and his birthday to a dict
             member_dict['members'].append({'nickname': nickname, 'birthday': birthday,
                                            'chat_id': message.chat.id})
-    # send the dict to a database and get response
-    res = database.add_members(member_dict)
-    # send response to user
-    await message.reply(res)
+            # send the dict to a database and get response
+            res = database.add_members(member_dict)
+            # send response to user
+            await message.reply(res)
+        else:
+            await message.reply("Используй /help")
 
 
 @dp.message_handler(commands=['list'])
