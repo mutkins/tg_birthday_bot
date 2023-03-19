@@ -2,6 +2,11 @@ from sqlalchemy import create_engine, select, Table, Column, Integer, String, Me
 from sqlalchemy.orm import mapper, relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, date, time
+import logging
+
+logging.basicConfig(filename="main.log", level=logging.DEBUG, filemode="w",
+                    format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger("main")
 
 # Declarative method
 engine = create_engine("sqlite:///bithdb.db", echo=True)
@@ -51,13 +56,13 @@ def get_members_of_chat(chat_id=None):
         DBSession = sessionmaker(bind=engine)
         session = DBSession()
 
-        stringToReturn = ""
+        string_to_return = ""
         # Searching members
         for member in session.query(Members).filter_by(chat_id=chat_id):
 
             # And making beauty-formatted string for user
-            stringToReturn = stringToReturn + f"{member.nickname} {member.birthday}" + "\n"
-        return stringToReturn if stringToReturn else "Список пуст"
+            string_to_return = string_to_return + f"{member.nickname} {member.birthday}" + "\n"
+        return string_to_return if string_to_return else "Список пуст"
     except exc.OperationalError as e:
         # If we get  error - send raw exception
         return e.args
