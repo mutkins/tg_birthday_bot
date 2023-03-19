@@ -47,9 +47,11 @@ class Members(Base):
             session = DBSession()
 
             # If member with these nickname and chat_id exists - update his birthday
-            q = session.query(Members).filter_by(nickname=self.get_nickname(), chat_id=self.get_chat_id()).first()
-            if q:
-                q.birthday = self.get_birthday()
+            searched_member = session.query(Members).filter_by(
+                nickname=self.get_nickname(), chat_id=self.get_chat_id()).first()
+            if searched_member:
+                searched_member.birthday = self.get_birthday()
+                searched_member.wished_mark_year = ""
             else:
                 # Else - just add a new member
                 session.add(self)
@@ -80,37 +82,41 @@ def get_members_of_chat(chat_id=None):
         return e.args
 
 
-def get_birthday_boys():
-    current_dateTime = datetime.now().strftime('%d.%m')
+def get_members_who_have_birthday_today():
+    current_date_time = datetime.now().strftime('%d.%m')
     try:
         DBSession = sessionmaker(bind=engine)
         session = DBSession()
-        res = session.query(Members).filter_by(birthday=current_dateTime)
+        res = session.query(Members).filter_by(birthday=current_date_time)
         return res
     except exc.OperationalError as e:
         log.error(e)
 
 
-def mark_wished_member(chat_id, nickname):
+def mark_wished_member(member):
     # Mark wished member in db
-    log.debug(f"Mark wished member in db. chat_id ={chat_id}, nickname = {nickname}")
+    log.debug(f"Mark wished member in db. chat_id ={member.get_chat_id()}, nickname = {member.get_nickname()}")
     try:
         DBSession = sessionmaker(bind=engine)
         session = DBSession()
-        for member in session.query(Members).filter_by(chat_id=chat_id, nickname=nickname):
-            member.wished_mark_year = datetime.now().strftime('%Y')
+        # Search the member
+        for searched_member in session.query(Members).filter_by(
+                chat_id=member.get_chat_id(), nickname=member.get_nickname()):
+            # Update his mark as current year
+            searched_member.wished_mark_year = datetime.now().strftime('%Y')
             session.commit()
     except exc.OperationalError as e:
         session.rollback()
         log.error(e)
 
 
-def is_member_wished(chat_id, nickname):
+def is_member_wished(member):
     try:
         DBSession = sessionmaker(bind=engine)
         session = DBSession()
-        for member in session.query(Members).filter_by(chat_id=chat_id, nickname=nickname):
-            if member.wished_mark_year == datetime.now().strftime('%Y'):
+        for searched_member in session.query(Members).filter_by(chat_id=member.get_chat_id(),
+                                                                nickname=member.get_nickname()):
+            if searched_member.wished_mark_year == datetime.now().strftime('%Y'):
                 return True
             else:
                 return False

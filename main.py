@@ -84,7 +84,7 @@ async def send_list(message: types.Message):
 
 
 async def send_wishes():
-    members_list = database.get_birthday_boys()
+    members_list = database.get_members_who_have_birthday_today()
     for member in members_list:
         try:
             # Get wish path and photo path. It needs to delete wish and photo later
@@ -97,14 +97,16 @@ async def send_wishes():
             photo = InputFile(photo_path)
 
             # Send message to chat in async format
-            if not database.is_member_wished(chat_id=member.chat_id, nickname=member.nickname):
-                await bot.send_photo(chat_id=member.chat_id, photo=photo, caption=member.nickname + " " + wish_text)
-                database.mark_wished_member(chat_id=member.chat_id, nickname=member.nickname)
+            if not database.is_member_wished(member):
+                await bot.send_photo(
+                    chat_id=member.get_chat_id(), photo=photo, caption=member.get_nickname() + " " + wish_text)
+                # mark the wish the member to exclude case repeated wish (cause the error or something)
+                database.mark_wished_member(member)
             else:
                 log.error(f"The member with nickname = {member.nickname} and chat_id = {member.chat_id} "
                           f"is already wished in this year. May be something went wrong")
-            os.remove(photo_path)
-            os.remove(wish_text_path)
+            # os.remove(photo_path)
+            # os.remove(wish_text_path)
         except Exception as e:
             log.error(e)
             raise Exception
@@ -112,6 +114,7 @@ async def send_wishes():
 
 async def scheduler():
     aioschedule.every().day.at(config["General"]["time_to_send_wish"]).do(send_wishes)
+    # aioschedule.every(5).seconds.do(send_wishes)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
