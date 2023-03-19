@@ -83,23 +83,28 @@ def get_birthday_boys():
 
 
 def mark_wished_member(chat_id, nickname):
+    # Mark wished member in db
+    log.debug(f"Mark wished member in db. chat_id ={chat_id}, nickname = {nickname}")
     try:
+        DBSession = sessionmaker(bind=engine)
         session = DBSession()
-        q = session.query(Members).filter_by(chat_id=chat_id, nickname=nickname)
-        if q:
-            q.wished_mark_year = datetime.now().strftime('%Y')
+        for member in session.query(Members).filter_by(chat_id=chat_id, nickname=nickname):
+            member.wished_mark_year = datetime.now().strftime('%Y')
+            session.commit()
     except exc.OperationalError as e:
+        session.rollback()
         log.error(e)
 
 
 def is_member_wished(chat_id, nickname):
     try:
+        DBSession = sessionmaker(bind=engine)
         session = DBSession()
-        q = session.query(Members).filter_by(chat_id=chat_id, nickname=nickname)
-        if q.wished_mark_year == datetime.now().strftime('%Y'):
-            return True
-        else:
-            return False
+        for member in session.query(Members).filter_by(chat_id=chat_id, nickname=nickname):
+            if member.wished_mark_year == datetime.now().strftime('%Y'):
+                return True
+            else:
+                return False
     except exc.OperationalError as e:
         log.error(e)
 

@@ -18,7 +18,7 @@ load_dotenv()
 API_TOKEN = os.environ.get('tgBot_id')
 
 # Configure logging
-logging.basicConfig(filename="main.log", level=logging.DEBUG, filemode="w",
+logging.basicConfig(filename="main.log", level=logging.INFO, filemode="w",
                     format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("main")
 
