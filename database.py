@@ -45,7 +45,7 @@ class Members(Base):
         try:
             DBSession = sessionmaker(bind=engine)
             session = DBSession()
-
+            session.expire_on_commit = False
             # If member with these nickname and chat_id exists - update his birthday
             searched_member = session.query(Members).filter_by(
                 nickname=self.get_nickname(), chat_id=self.get_chat_id()).first()
