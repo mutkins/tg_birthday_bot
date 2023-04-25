@@ -18,7 +18,7 @@ load_dotenv()
 API_TOKEN = os.environ.get('tgBot_id')
 
 # Configure logging
-logging.basicConfig(filename="main.log", level=logging.INFO, filemode="w",
+logging.basicConfig(filename="main.log", level=logging.ERROR, filemode="w",
                     format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("main")
 
@@ -125,4 +125,4 @@ async def on_startup(_):
 
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=False, on_startup=on_startup)
+    executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
