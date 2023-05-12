@@ -36,7 +36,8 @@ async def send_welcome(message: types.Message):
                         "Команды:\n"
                         "<i>/list</i> - показать все записанные др\n"
                         "<i>/add</i> - добавить др участника. Несколько участников пишутся через запятую\n"
-                        "Например, /add @mikhail_utkins 19.10, @ivan_pupkins 22.11\n")
+                        "Например, /add @mikhail_utkins 19.10, @ivan_pupkins 22.11\n"
+                        "<i>/del</i> - удалить участника. Например, /del @mikhail_utkins\n", parse_mode="HTML")
 
 
 @dp.message_handler(commands=['add'])
@@ -81,6 +82,23 @@ async def send_list(message: types.Message):
     """
     members_list = database.get_members_of_chat(chat_id=message.chat.id)
     await message.reply(members_list)
+
+
+@dp.message_handler(commands=['del'])
+async def delete_member(message: types.Message):
+    """
+    This handler will be called when user sends `/del` command
+    """
+    nickname = tools.get_nickname_by_regex(message.get_args())
+    if nickname:
+        res = database.delete_member(nickname=nickname, chat_id=message.chat.id)
+        if res:
+            await message.reply(res)
+        else:
+            await message.reply(f"Участник {message.get_args()} удален")
+    else:
+        await message.reply("Используй /help")
+        log.info(f"User sent {message.get_args()}, it was not be able to parse it")
 
 
 async def send_wishes():

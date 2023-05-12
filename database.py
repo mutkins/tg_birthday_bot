@@ -124,5 +124,27 @@ def is_member_wished(member):
         log.error(e)
 
 
+def delete_member(nickname, chat_id):
+    # Create a table. If the table exists - the class is connected to it
+    Base.metadata.create_all(engine)
+    string_to_return = ""
+    #  delete member from table
+    try:
+        DBSession = sessionmaker(bind=engine)
+        session = DBSession()
+        session.expire_on_commit = False
+        # If member with these nickname and chat_id exists - update his birthday
+        searched_member = session.query(Members).filter_by(
+            nickname=nickname, chat_id=chat_id).first()
+        if not searched_member:
+            return "Участник не найден"
+        session.delete(searched_member)
+        session.commit()
+        return None
+    except exc.IntegrityError as e:
+        # return error if something goes wrong
+        session.rollback()
+        log.error(e)
+        return e.args
 
 

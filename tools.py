@@ -37,6 +37,14 @@ def get_nickname_and_birthday_by_regex(raw_string):
         return None
 
 
+def get_nickname_by_regex(raw_string):
+    nickname = re.search(r'(?i)@\S+', raw_string)
+    if nickname:
+        return nickname.group(0)
+    else:
+        return None
+
+
 def is_date_format_ok(date_str):
     try:
         date_object = datetime.strptime(date_str, "%d.%m")
