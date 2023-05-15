@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, select, Table, Column, Integer, String, MetaData, UniqueConstraint, exc, DateTime
-from sqlalchemy.orm import mapper, relationship, sessionmaker
+from sqlalchemy.orm import mapper, relationship, sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, date, time
 import logging
@@ -42,55 +42,51 @@ class Members(Base):
         Base.metadata.create_all(engine)
         string_to_return = ""
         #  Add new member to the table
-        try:
-            DBSession = sessionmaker(bind=engine)
-            session = DBSession()
+        with Session(engine) as session:
             session.expire_on_commit = False
-            # If member with these nickname and chat_id exists - update his birthday
-            searched_member = session.query(Members).filter_by(
-                nickname=self.get_nickname(), chat_id=self.get_chat_id()).first()
-            if searched_member:
-                searched_member.birthday = self.get_birthday()
-                searched_member.wished_mark_year = ""
+            try:
+                # If member with these nickname and chat_id exists - update his birthday
+                searched_member = session.query(Members).filter_by(
+                    nickname=self.get_nickname(), chat_id=self.get_chat_id()).first()
+                if searched_member:
+                    searched_member.birthday = self.get_birthday()
+                    searched_member.wished_mark_year = ""
+                else:
+                    # Else - just add a new member
+                    session.add(self)
+                    return None
+            except exc.IntegrityError as e:
+                # return error if something goes wrong
+                session.rollback()
+                log.error(e)
+                return e.args
             else:
-                # Else - just add a new member
-                session.add(self)
-            session.commit()
-            return None
-        except exc.IntegrityError as e:
-            # return error if something goes wrong
-            session.rollback()
+                session.commit()
+
+
+def get_members_of_chat(chat_id=None):
+    with Session(engine) as session:
+        try:
+            string_to_return = ""
+            # Searching members
+            for member in session.query(Members).filter_by(chat_id=chat_id):
+                # And making beauty-formatted string for user
+                string_to_return = string_to_return + f"{member.nickname} {member.birthday}" + "\n"
+            return string_to_return if string_to_return else "Список пуст"
+        except exc.OperationalError as e:
+            # If we get  error - send raw exception
             log.error(e)
             return e.args
 
 
-def get_members_of_chat(chat_id=None):
-    try:
-        DBSession = sessionmaker(bind=engine)
-        session = DBSession()
-
-        string_to_return = ""
-        # Searching members
-        for member in session.query(Members).filter_by(chat_id=chat_id):
-
-            # And making beauty-formatted string for user
-            string_to_return = string_to_return + f"{member.nickname} {member.birthday}" + "\n"
-        return string_to_return if string_to_return else "Список пуст"
-    except exc.OperationalError as e:
-        # If we get  error - send raw exception
-        log.error(e)
-        return e.args
-
-
 def get_members_who_have_birthday_today():
     current_date_time = datetime.now().strftime('%d.%m')
-    try:
-        DBSession = sessionmaker(bind=engine)
-        session = DBSession()
-        res = session.query(Members).filter_by(birthday=current_date_time)
-        return res
-    except exc.OperationalError as e:
-        log.error(e)
+    with Session(engine) as session:
+        try:
+            res = session.query(Members).filter_by(birthday=current_date_time)
+            return res
+        except exc.OperationalError as e:
+            log.error(e)
 
 
 def mark_wished_member(member):
