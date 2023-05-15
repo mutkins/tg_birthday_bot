@@ -23,34 +23,45 @@ class Members(Base):
     wished_mark_year = Column(String(250))
     __table_args__ = (UniqueConstraint('nickname', 'chat_id', name='unique_name_chat_id'),)
 
+    def __init__(self, nickname, birthday, chat_id):
+        self.nickname = nickname
+        self.chat_id = chat_id
+        self.birthday = birthday
 
-def add_members(members_dict):
-    # Create a table. If the table exists - the class is connected to it
-    Base.metadata.create_all(engine)
-    stringToReturn = ""
-    #  Add new member to the table
-    for items in members_dict.get('members'):
+    def get_nickname(self):
+        return self.nickname
+
+    def get_chat_id(self):
+        return self.chat_id
+
+    def get_birthday(self):
+        return self.birthday
+
+    def add_member(self):
+        # Create a table. If the table exists - the class is connected to it
+        Base.metadata.create_all(engine)
+        string_to_return = ""
+        #  Add new member to the table
         try:
             DBSession = sessionmaker(bind=engine)
             session = DBSession()
-
+            session.expire_on_commit = False
             # If member with these nickname and chat_id exists - update his birthday
-            q = session.query(Members).filter_by(nickname=items.get('nickname'), chat_id=items.get('chat_id')).first()
-            if q:
-                q.birthday = items.get('birthday')
+            searched_member = session.query(Members).filter_by(
+                nickname=self.get_nickname(), chat_id=self.get_chat_id()).first()
+            if searched_member:
+                searched_member.birthday = self.get_birthday()
+                searched_member.wished_mark_year = ""
             else:
                 # Else - just add a new member
-                new_member = Members(nickname=items.get('nickname'),
-                                     birthday=items.get('birthday'), chat_id=items.get('chat_id'))
-                session.add(new_member)
+                session.add(self)
             session.commit()
-            stringToReturn = stringToReturn + f"{items.get('nickname')}" + "\n"
+            return None
         except exc.IntegrityError as e:
             # return error if something goes wrong
             session.rollback()
             log.error(e)
             return e.args
-    return stringToReturn + "будут поздравлены!"
 
 
 def get_members_of_chat(chat_id=None):
@@ -71,37 +82,41 @@ def get_members_of_chat(chat_id=None):
         return e.args
 
 
-def get_birthday_boys():
-    current_dateTime = datetime.now().strftime('%d.%m')
+def get_members_who_have_birthday_today():
+    current_date_time = datetime.now().strftime('%d.%m')
     try:
         DBSession = sessionmaker(bind=engine)
         session = DBSession()
-        res = session.query(Members).filter_by(birthday=current_dateTime)
+        res = session.query(Members).filter_by(birthday=current_date_time)
         return res
     except exc.OperationalError as e:
         log.error(e)
 
 
-def mark_wished_member(chat_id, nickname):
+def mark_wished_member(member):
     # Mark wished member in db
-    log.debug(f"Mark wished member in db. chat_id ={chat_id}, nickname = {nickname}")
+    log.debug(f"Mark wished member in db. chat_id ={member.get_chat_id()}, nickname = {member.get_nickname()}")
     try:
         DBSession = sessionmaker(bind=engine)
         session = DBSession()
-        for member in session.query(Members).filter_by(chat_id=chat_id, nickname=nickname):
-            member.wished_mark_year = datetime.now().strftime('%Y')
+        # Search the member
+        for searched_member in session.query(Members).filter_by(
+                chat_id=member.get_chat_id(), nickname=member.get_nickname()):
+            # Update his mark as current year
+            searched_member.wished_mark_year = datetime.now().strftime('%Y')
             session.commit()
     except exc.OperationalError as e:
         session.rollback()
         log.error(e)
 
 
-def is_member_wished(chat_id, nickname):
+def is_member_wished(member):
     try:
         DBSession = sessionmaker(bind=engine)
         session = DBSession()
-        for member in session.query(Members).filter_by(chat_id=chat_id, nickname=nickname):
-            if member.wished_mark_year == datetime.now().strftime('%Y'):
+        for searched_member in session.query(Members).filter_by(chat_id=member.get_chat_id(),
+                                                                nickname=member.get_nickname()):
+            if searched_member.wished_mark_year == datetime.now().strftime('%Y'):
                 return True
             else:
                 return False
@@ -109,5 +124,27 @@ def is_member_wished(chat_id, nickname):
         log.error(e)
 
 
+def delete_member(nickname, chat_id):
+    # Create a table. If the table exists - the class is connected to it
+    Base.metadata.create_all(engine)
+    string_to_return = ""
+    #  delete member from table
+    try:
+        DBSession = sessionmaker(bind=engine)
+        session = DBSession()
+        session.expire_on_commit = False
+        # If member with these nickname and chat_id exists - update his birthday
+        searched_member = session.query(Members).filter_by(
+            nickname=nickname, chat_id=chat_id).first()
+        if not searched_member:
+            return "Участник не найден"
+        session.delete(searched_member)
+        session.commit()
+        return None
+    except exc.IntegrityError as e:
+        # return error if something goes wrong
+        session.rollback()
+        log.error(e)
+        return e.args
 
 
