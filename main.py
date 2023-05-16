@@ -15,7 +15,7 @@ config = configparser.ConfigParser()
 config.read("settings.ini")
 
 load_dotenv()
-API_TOKEN = os.environ.get('test_tgBot_id')
+API_TOKEN = os.environ.get('tgBot_id')
 
 # Configure logging
 logging.basicConfig(filename="main.log", level=logging.ERROR, filemode="w",
