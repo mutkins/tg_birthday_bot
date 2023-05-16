@@ -54,14 +54,13 @@ class Members(Base):
                 else:
                     # Else - just add a new member
                     session.add(self)
-                    return None
+                session.commit()
+                return None
             except exc.IntegrityError as e:
                 # return error if something goes wrong
                 session.rollback()
                 log.error(e)
                 return e.args
-            else:
-                session.commit()
 
 
 def get_members_of_chat(chat_id=None):
@@ -92,32 +91,30 @@ def get_members_who_have_birthday_today():
 def mark_wished_member(member):
     # Mark wished member in db
     log.debug(f"Mark wished member in db. chat_id ={member.get_chat_id()}, nickname = {member.get_nickname()}")
-    try:
-        DBSession = sessionmaker(bind=engine)
-        session = DBSession()
-        # Search the member
-        for searched_member in session.query(Members).filter_by(
-                chat_id=member.get_chat_id(), nickname=member.get_nickname()):
-            # Update his mark as current year
-            searched_member.wished_mark_year = datetime.now().strftime('%Y')
+    with Session(engine) as session:
+        try:
+            # Search the member
+            for searched_member in session.query(Members).filter_by(
+                    chat_id=member.get_chat_id(), nickname=member.get_nickname()):
+                # Update his mark as current year
+                searched_member.wished_mark_year = datetime.now().strftime('%Y')
             session.commit()
-    except exc.OperationalError as e:
-        session.rollback()
-        log.error(e)
+        except exc.OperationalError as e:
+            session.rollback()
+            log.error(e)
 
 
 def is_member_wished(member):
-    try:
-        DBSession = sessionmaker(bind=engine)
-        session = DBSession()
-        for searched_member in session.query(Members).filter_by(chat_id=member.get_chat_id(),
-                                                                nickname=member.get_nickname()):
-            if searched_member.wished_mark_year == datetime.now().strftime('%Y'):
-                return True
-            else:
-                return False
-    except exc.OperationalError as e:
-        log.error(e)
+    with Session(engine) as session:
+        try:
+            for searched_member in session.query(Members).filter_by(chat_id=member.get_chat_id(),
+                                                                    nickname=member.get_nickname()):
+                if searched_member.wished_mark_year == datetime.now().strftime('%Y'):
+                    return True
+                else:
+                    return False
+        except exc.OperationalError as e:
+            log.error(e)
 
 
 def delete_member(nickname, chat_id):
@@ -125,22 +122,23 @@ def delete_member(nickname, chat_id):
     Base.metadata.create_all(engine)
     string_to_return = ""
     #  delete member from table
-    try:
-        DBSession = sessionmaker(bind=engine)
-        session = DBSession()
-        session.expire_on_commit = False
-        # If member with these nickname and chat_id exists - update his birthday
-        searched_member = session.query(Members).filter_by(
-            nickname=nickname, chat_id=chat_id).first()
-        if not searched_member:
-            return "Участник не найден"
-        session.delete(searched_member)
-        session.commit()
-        return None
-    except exc.IntegrityError as e:
-        # return error if something goes wrong
-        session.rollback()
-        log.error(e)
-        return e.args
+    with Session(engine) as session:
+        try:
+            session.expire_on_commit = False
+            # If member with these nickname and chat_id exists - update his birthday
+            searched_member = session.query(Members).filter_by(
+                nickname=nickname, chat_id=chat_id).first()
+            if searched_member:
+                session.delete(searched_member)
+                session.commit()
+                return None
+            else:
+                return "Участник не найден"
+        except exc.IntegrityError as e:
+            # return error if something goes wrong
+            session.rollback()
+            log.error(e)
+            return e.args
+
 
 
