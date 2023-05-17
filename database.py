@@ -3,6 +3,9 @@ from sqlalchemy.orm import mapper, relationship, sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, date, time
 import logging
+from localExceptions import NotFoundException, CommonException
+from sqlalchemy.orm import exc
+
 
 logging.basicConfig(filename="main.log", level=logging.DEBUG, filemode="w",
                     format="%(asctime)s %(levelname)s %(message)s")
@@ -55,12 +58,11 @@ class Members(Base):
                     # Else - just add a new member
                     session.add(self)
                 session.commit()
-                return None
             except exc.IntegrityError as e:
                 # return error if something goes wrong
                 session.rollback()
                 log.error(e)
-                return e.args
+                raise CommonException(e)
 
 
 def get_members_of_chat(chat_id=None):
@@ -75,7 +77,7 @@ def get_members_of_chat(chat_id=None):
         except exc.OperationalError as e:
             # If we get  error - send raw exception
             log.error(e)
-            return e.args
+            raise CommonException(e)
 
 
 def get_members_who_have_birthday_today():
@@ -86,6 +88,7 @@ def get_members_who_have_birthday_today():
             return res
         except exc.OperationalError as e:
             log.error(e)
+            raise CommonException(e)
 
 
 def mark_wished_member(member):
@@ -102,6 +105,7 @@ def mark_wished_member(member):
         except exc.OperationalError as e:
             session.rollback()
             log.error(e)
+            raise CommonException(e)
 
 
 def is_member_wished(member):
@@ -115,6 +119,7 @@ def is_member_wished(member):
                     return False
         except exc.OperationalError as e:
             log.error(e)
+            raise CommonException(e)
 
 
 def delete_member(nickname, chat_id):
@@ -126,19 +131,19 @@ def delete_member(nickname, chat_id):
         try:
             session.expire_on_commit = False
             # If member with these nickname and chat_id exists - update his birthday
-            searched_member = session.query(Members).filter_by(
-                nickname=nickname, chat_id=chat_id).first()
-            if searched_member:
-                session.delete(searched_member)
-                session.commit()
-                return None
-            else:
-                return "Участник не найден"
-        except exc.IntegrityError as e:
+            searched_member = session.query(Members).filter_by(nickname=nickname, chat_id=chat_id).first()
+            session.delete(searched_member)
+            session.commit()
+            return None
+        except exc.UnmappedInstanceError as e:
+            session.rollback()
+            log.error(e)
+            raise NotFoundException(e)
+        except Exception as e:
             # return error if something goes wrong
             session.rollback()
             log.error(e)
-            return e.args
+            raise CommonException(e)
 
 
 

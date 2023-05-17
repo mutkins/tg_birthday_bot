@@ -9,6 +9,8 @@ import database
 import re
 import tools
 import configparser
+from localExceptions import NotFoundException, CommonException
+
 
 # Read config file
 config = configparser.ConfigParser()
@@ -50,29 +52,24 @@ async def add_members(message: types.Message):
     # If there are many members in a string, put it into the dict and analyse each one
     members_string = str.split(message.get_args(), ',')
     report_string = ""
-    is_success = True
     for item in members_string:
         # try to parse user's string
         nick_and_bday = tools.get_nickname_and_birthday_by_regex(item)
         # if we can parse user's string, create object for new member
         if nick_and_bday:
             new_member = database.Members(*nick_and_bday, message.chat.id)
-            # send the dict to a database and get response
-            res = new_member.add_member()
-            # If method returns something - something went wrong
-            if res:
-                await message.reply("Внутренняя ошибка, попробуйте позже")
-                raise Exception
-            # Else - send response to user
-            report_string += f"{new_member.get_nickname()}\n"
-
+            # put member to db
+            try:
+                new_member.add_member()
+                report_string += f"{new_member.get_nickname()}\n"
+            except CommonException as e:
+                await send_error_message(message=message)
+                raise Exception(e)
         else:
             await message.reply("Используй /help")
-            log.info(f"User sent {message.get_args()}, it was not be able to parse it")
-            is_success = False
-
-    if is_success:
-        await message.reply(report_string + "Будут поздравлены")
+            log.error(f"User sent {message.get_args()}, it was not be able to parse it")
+            return
+    await message.reply(report_string + "Будут поздравлены")
 
 
 @dp.message_handler(commands=['list'])
@@ -80,8 +77,12 @@ async def send_list(message: types.Message):
     """
     This handler will be called when user sends `/start` or `/help` command
     """
-    members_list = database.get_members_of_chat(chat_id=message.chat.id)
-    await message.reply(members_list)
+    try:
+        members_list = database.get_members_of_chat(chat_id=message.chat.id)
+        await message.reply(members_list)
+    except CommonException as e:
+        await send_error_message(message=message)
+        raise Exception(e)
 
 
 @dp.message_handler(commands=['del'])
@@ -91,9 +92,14 @@ async def delete_member(message: types.Message):
     """
     nickname = tools.get_nickname_by_regex(message.get_args())
     if nickname:
-        res = database.delete_member(nickname=nickname, chat_id=message.chat.id)
-        if res:
-            await message.reply(res)
+        try:
+            database.delete_member(nickname=nickname, chat_id=message.chat.id)
+        except NotFoundException as e:
+            await send_error_message(message=message, err_type='NF')
+            raise Exception(e)
+        except CommonException as e:
+            await send_error_message(message=message)
+            raise Exception(e)
         else:
             await message.reply(f"Участник {message.get_args()} удален")
     else:
@@ -125,9 +131,17 @@ async def send_wishes():
                           f"is already wished in this year. May be something went wrong")
             # os.remove(photo_path)
             # os.remove(wish_text_path)
-        except Exception as e:
+        except CommonException as e:
             log.error(e)
             raise Exception
+
+
+async def send_error_message(message: types.Message, err_type='C'):
+    match err_type:
+        case 'C':
+            await message.reply("Внутренняя ошибка, попробуйте позже")
+        case 'NF':
+            await message.reply("Пользователь не найден")
 
 
 async def scheduler():
