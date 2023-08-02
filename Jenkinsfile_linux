@@ -5,7 +5,9 @@ pipeline {
        openai_api_key = credentials('openai_api_key')
        CHAT_ID = credentials('my_chat_id')
     }
-
+    options {
+        retry(3) 
+    }
     stages {
        stage('get dependencies'){
             steps {
