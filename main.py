@@ -23,7 +23,7 @@ logging.basicConfig(filename="main.log", level=logging.ERROR, filemode="w",
 log = logging.getLogger("main")
 
 # Initialize bot and dispatcher
-bot = Bot(token=API_TOKEN)
+bot = Bot(token=API_TOKEN, proxy='socks5://localhost:1080')
 dp = Dispatcher(bot)
 
 
@@ -131,8 +131,8 @@ async def send_wishes():
 
 
 async def scheduler():
-    aioschedule.every().day.at(config["General"]["time_to_send_wish"]).do(send_wishes)
-    # aioschedule.every(5).seconds.do(send_wishes)
+    # aioschedule.every().day.at(config["General"]["time_to_send_wish"]).do(send_wishes)
+    aioschedule.every(30).seconds.do(send_wishes)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
