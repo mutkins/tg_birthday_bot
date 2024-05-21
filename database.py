@@ -9,7 +9,7 @@ logging.basicConfig(filename="main.log", level=logging.DEBUG, filemode="w",
 log = logging.getLogger("main")
 
 # Declarative method
-engine = create_engine("sqlite:////etc/tg_bots/data/bithdb.db", echo=True)
+engine = create_engine("sqlite:////etc/tg_bots_data/bithdb.db", echo=True)
 Base = declarative_base()
 
 
